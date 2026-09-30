@@ -1,0 +1,811 @@
+local P=game:GetService("Players").LocalPlayer
+local UIS=game:GetService("UserInputService")
+local RS=game:GetService("ReplicatedStorage")
+local Z=workspace.MapResources.Zones
+local A=false
+
+--//==================================================
+--// ZONE DATA
+--//==================================================
+
+local L={
+	{-144.54,-102.15,1032.19,-144.54,-87.15,1032.19},
+	{-617.92,143.39,-1130.44,-617.92,158.39,-1130.44},
+	{1449.99,77.16,-677.59,1449.99,92.16,-677.59},
+	{276.03,75.50,-1029.02,276.03,90.50,-1029.02},
+	{-513.23,75.73,-430.79,-513.23,90.73,-430.79},
+	{1090.65,66.03,467.14,1090.65,81.03,467.14},
+	{209.25,-32.79,-359.19,209.25,-17.79,-359.19},
+	{-170.20,109.98,388.42,-170.20,124.98,388.42},
+	{-69.11,-61.16,-1493.54,-69.11,-46.16,-1493.54}
+}
+
+local FarmZone={}
+for i=1,#L do
+	FarmZone[i]=true
+end
+
+--//==================================================
+--// QUEST VARIABLES
+--//==================================================
+
+_G.CurrentQuest="None"
+_G.AutoEatRunning=false
+_G.AutoDrinkRunning=false
+_G.AutoRestRunning=false
+
+--//==================================================
+--// GUI
+--//==================================================
+
+local G=Instance.new("ScreenGui")
+G.Name="PrimevalEarthMenu"
+G.ResetOnSpawn=false
+G.Parent=game.CoreGui
+
+local F=Instance.new("Frame")
+F.Parent=G
+F.Size=UDim2.fromOffset(300,370)
+F.Position=UDim2.fromScale(.5,.5)
+F.AnchorPoint=Vector2.new(.5,.5)
+F.BackgroundColor3=Color3.fromRGB(25,25,25)
+
+Instance.new("UICorner",F).CornerRadius=UDim.new(0,10)
+
+--// TITLE
+local T=Instance.new("TextLabel")
+T.Parent=F
+T.Size=UDim2.new(1,0,0,42)
+T.BackgroundTransparency=1
+T.Text="CODE BY TEDDY"
+T.TextColor3=Color3.new(1,1,1)
+T.TextSize=18
+T.Font=Enum.Font.GothamBold
+
+--//==================================================
+--// TAB BUTTONS
+--//==================================================
+
+local TabBar=Instance.new("Frame")
+TabBar.Parent=F
+TabBar.Position=UDim2.fromOffset(10,45)
+TabBar.Size=UDim2.new(1,-20,0,38)
+TabBar.BackgroundTransparency=1
+
+local FarmTab=Instance.new("TextButton")
+FarmTab.Parent=TabBar
+FarmTab.Size=UDim2.new(.5,-4,1,0)
+FarmTab.Position=UDim2.fromOffset(0,0)
+FarmTab.BackgroundColor3=Color3.fromRGB(35,120,55)
+FarmTab.Text="FARM"
+FarmTab.TextColor3=Color3.new(1,1,1)
+FarmTab.TextSize=13
+FarmTab.Font=Enum.Font.GothamBold
+Instance.new("UICorner",FarmTab).CornerRadius=UDim.new(0,7)
+
+local QuestTab=Instance.new("TextButton")
+QuestTab.Parent=TabBar
+QuestTab.Size=UDim2.new(.5,-4,1,0)
+QuestTab.Position=UDim2.new(.5,4,0,0)
+QuestTab.BackgroundColor3=Color3.fromRGB(40,40,40)
+QuestTab.Text="QUEST"
+QuestTab.TextColor3=Color3.new(1,1,1)
+QuestTab.TextSize=13
+QuestTab.Font=Enum.Font.GothamBold
+Instance.new("UICorner",QuestTab).CornerRadius=UDim.new(0,7)
+
+--//==================================================
+--// FARM PAGE
+--//==================================================
+
+local FarmPage=Instance.new("Frame")
+FarmPage.Parent=F
+FarmPage.Position=UDim2.fromOffset(10,90)
+FarmPage.Size=UDim2.new(1,-20,1,-100)
+FarmPage.BackgroundTransparency=1
+
+--// ZONE GRID
+local Grid=Instance.new("Frame")
+Grid.Parent=FarmPage
+Grid.Size=UDim2.new(1,0,0,145)
+Grid.BackgroundTransparency=1
+
+local GL=Instance.new("UIGridLayout",Grid)
+GL.CellSize=UDim2.fromOffset(85,40)
+GL.CellPadding=UDim2.fromOffset(8,7)
+GL.HorizontalAlignment=Enum.HorizontalAlignment.Center
+GL.VerticalAlignment=Enum.VerticalAlignment.Center
+
+local function TP(i)
+
+	local r=P.Character
+		and P.Character:FindFirstChild("HumanoidRootPart")
+
+	if r then
+
+		r.CFrame=CFrame.new(
+			L[i][4],
+			L[i][5],
+			L[i][6]
+		)
+
+		r.AssemblyLinearVelocity=Vector3.zero
+		r.AssemblyAngularVelocity=Vector3.zero
+	end
+end
+
+--// ZONE BUTTONS
+for i=1,#L do
+
+	local b=Instance.new("TextButton")
+	b.Parent=Grid
+	b.BackgroundColor3=Color3.fromRGB(40,40,40)
+	b.Text="Z"..i
+	b.TextColor3=Color3.new(1,1,1)
+	b.TextSize=14
+	b.Font=Enum.Font.GothamBold
+
+	Instance.new("UICorner",b).CornerRadius=UDim.new(0,7)
+
+	b.MouseButton1Click:Connect(function()
+		TP(i)
+	end)
+end
+
+--// FARM CONTROLS
+local FarmControls=Instance.new("Frame")
+FarmControls.Parent=FarmPage
+FarmControls.Position=UDim2.fromOffset(0,155)
+FarmControls.Size=UDim2.new(1,0,0,160)
+FarmControls.BackgroundTransparency=1
+
+local FarmList=Instance.new("UIListLayout",FarmControls)
+FarmList.Padding=UDim.new(0,7)
+
+--// ZONE FARM
+local FB=Instance.new("TextButton")
+FB.Parent=FarmControls
+FB.Size=UDim2.new(1,0,0,38)
+FB.BackgroundColor3=Color3.fromRGB(40,40,40)
+FB.Text="ZONE FARM ▼"
+FB.TextColor3=Color3.new(1,1,1)
+FB.TextSize=13
+FB.Font=Enum.Font.GothamBold
+
+Instance.new("UICorner",FB).CornerRadius=UDim.new(0,7)
+
+local FP=Instance.new("Frame")
+FP.Parent=FarmControls
+FP.Size=UDim2.new(1,0,0,0)
+FP.BackgroundColor3=Color3.fromRGB(30,30,30)
+FP.ClipsDescendants=true
+FP.Visible=false
+
+Instance.new("UICorner",FP).CornerRadius=UDim.new(0,7)
+
+local FGrid=Instance.new("UIGridLayout",FP)
+FGrid.CellSize=UDim2.fromOffset(70,30)
+FGrid.CellPadding=UDim2.fromOffset(6,5)
+FGrid.HorizontalAlignment=Enum.HorizontalAlignment.Center
+FGrid.VerticalAlignment=Enum.VerticalAlignment.Center
+
+for i=1,#L do
+
+	local b=Instance.new("TextButton")
+	b.Parent=FP
+	b.BackgroundColor3=Color3.fromRGB(35,120,55)
+	b.Text="Z"..i.." ✓"
+	b.TextColor3=Color3.new(1,1,1)
+	b.TextSize=12
+	b.Font=Enum.Font.GothamBold
+
+	Instance.new("UICorner",b).CornerRadius=UDim.new(0,6)
+
+	b.MouseButton1Click:Connect(function()
+
+		FarmZone[i]=not FarmZone[i]
+
+		if FarmZone[i] then
+			b.Text="Z"..i.." ✓"
+			b.BackgroundColor3=Color3.fromRGB(35,120,55)
+		else
+			b.Text="Z"..i.." ✕"
+			b.BackgroundColor3=Color3.fromRGB(120,40,40)
+		end
+	end)
+end
+
+FB.MouseButton1Click:Connect(function()
+
+	FP.Visible=not FP.Visible
+
+	if FP.Visible then
+		FB.Text="ZONE FARM ▲"
+		FP.Size=UDim2.new(1,0,0,105)
+	else
+		FB.Text="ZONE FARM ▼"
+		FP.Size=UDim2.new(1,0,0,0)
+	end
+end)
+
+--// AUTO FARM
+local B=Instance.new("TextButton")
+B.Parent=FarmControls
+B.Size=UDim2.new(1,0,0,40)
+B.BackgroundColor3=Color3.fromRGB(40,40,40)
+B.Text="AUTO FARM : OFF"
+B.TextColor3=Color3.new(1,1,1)
+B.TextSize=14
+B.Font=Enum.Font.GothamBold
+
+Instance.new("UICorner",B).CornerRadius=UDim.new(0,7)
+
+B.MouseButton1Click:Connect(function()
+
+	A=not A
+
+	B.Text="AUTO FARM : "..(A and "ON" or "OFF")
+
+	B.BackgroundColor3=A
+		and Color3.fromRGB(35,120,55)
+		or Color3.fromRGB(40,40,40)
+end)
+
+--//==================================================
+--// ZONE DETECTION
+--//==================================================
+
+local function GetZone(i)
+
+	local target=Vector3.new(
+		L[i][1],
+		L[i][2],
+		L[i][3]
+	)
+
+	local nearest
+	local nd=math.huge
+
+	for _,zone in ipairs(Z:GetChildren()) do
+
+		local core=zone:FindFirstChild("LightCore")
+
+		if core then
+
+			local p
+
+			if zone:IsA("BasePart") then
+				p=zone.Position
+			elseif zone:IsA("Model") then
+				p=zone:GetPivot().Position
+			elseif core:IsA("BasePart") then
+				p=core.Position
+			end
+
+			if p then
+
+				local d=(p-target).Magnitude
+
+				if d<nd then
+					nd=d
+					nearest=zone
+				end
+			end
+		end
+	end
+
+	return nearest
+end
+
+local function IsGreen(core)
+
+	if not core or not core:IsA("BasePart") then
+		return false
+	end
+
+	local c=core.Color
+
+	return c.R<.1
+		and c.G>.9
+		and c.B<.1
+end
+
+--// Z3 = VỊ TRÍ AN TOÀN
+local SafePos=CFrame.new(
+	L[3][4],
+	L[3][5],
+	L[3][6]
+)
+
+local function FindLostZone()
+
+	for i=1,#L do
+
+		if FarmZone[i] then
+
+			local zone=GetZone(i)
+			local core=zone
+				and zone:FindFirstChild("LightCore")
+
+			if not core or not IsGreen(core) then
+				return i
+			end
+		end
+	end
+
+	return nil
+end
+
+--//==================================================
+--// AUTO FARM LOOP
+--//==================================================
+
+task.spawn(function()
+
+	while task.wait(.2) do
+
+		if A then
+
+			local lost=FindLostZone()
+
+			if lost then
+
+				local zone=GetZone(lost)
+				local core=zone
+					and zone:FindFirstChild("LightCore")
+
+				if core then
+
+					TP(lost)
+
+					while A
+					and FarmZone[lost]
+					and not IsGreen(core) do
+
+						local r=P.Character
+							and P.Character:FindFirstChild("HumanoidRootPart")
+
+						if r then
+
+							r.CFrame=CFrame.new(
+								L[lost][4],
+								L[lost][5],
+								L[lost][6]
+							)
+
+							r.AssemblyLinearVelocity=Vector3.zero
+							r.AssemblyAngularVelocity=Vector3.zero
+						end
+
+						task.wait(.1)
+					end
+				end
+
+			else
+
+				local r=P.Character
+					and P.Character:FindFirstChild("HumanoidRootPart")
+
+				if r and
+					(r.Position-SafePos.Position).Magnitude>5 then
+
+					r.CFrame=SafePos
+					r.AssemblyLinearVelocity=Vector3.zero
+					r.AssemblyAngularVelocity=Vector3.zero
+				end
+			end
+		end
+	end
+end)
+
+--//==================================================
+--// QUEST PAGE
+--//==================================================
+
+local QuestPage=Instance.new("Frame")
+QuestPage.Parent=F
+QuestPage.Position=UDim2.fromOffset(10,90)
+QuestPage.Size=UDim2.new(1,-20,1,-100)
+QuestPage.BackgroundTransparency=1
+QuestPage.Visible=false
+
+local QuestLabel=Instance.new("TextLabel")
+QuestLabel.Parent=QuestPage
+QuestLabel.Size=UDim2.new(1,0,0,45)
+QuestLabel.BackgroundColor3=Color3.fromRGB(30,30,30)
+QuestLabel.Text="Current Quest: Waiting..."
+QuestLabel.TextColor3=Color3.fromRGB(255,255,0)
+QuestLabel.TextSize=13
+QuestLabel.Font=Enum.Font.GothamBold
+
+Instance.new("UICorner",QuestLabel).CornerRadius=UDim.new(0,7)
+
+local function QuestButton(text,y)
+
+	local b=Instance.new("TextButton")
+	b.Parent=QuestPage
+	b.Position=UDim2.fromOffset(0,y)
+	b.Size=UDim2.new(1,0,0,42)
+	b.BackgroundColor3=Color3.fromRGB(40,40,40)
+	b.Text=text
+	b.TextColor3=Color3.new(1,1,1)
+	b.TextSize=13
+	b.Font=Enum.Font.GothamBold
+
+	Instance.new("UICorner",b).CornerRadius=UDim.new(0,7)
+
+	return b
+end
+
+local AutoEatButton=QuestButton("AUTO EAT : OFF",58)
+local AutoDrinkButton=QuestButton("AUTO DRINK : OFF",107)
+local AutoRestButton=QuestButton("AUTO REST : OFF",156)
+
+--// QUEST BUTTONS
+AutoEatButton.MouseButton1Click:Connect(function()
+
+	_G.AutoEatRunning=not _G.AutoEatRunning
+
+	AutoEatButton.Text="AUTO EAT : "
+		..(_G.AutoEatRunning and "ON" or "OFF")
+
+	AutoEatButton.BackgroundColor3=
+		_G.AutoEatRunning
+		and Color3.fromRGB(35,120,55)
+		or Color3.fromRGB(40,40,40)
+end)
+
+AutoDrinkButton.MouseButton1Click:Connect(function()
+
+	_G.AutoDrinkRunning=not _G.AutoDrinkRunning
+
+	AutoDrinkButton.Text="AUTO DRINK : "
+		..(_G.AutoDrinkRunning and "ON" or "OFF")
+
+	AutoDrinkButton.BackgroundColor3=
+		_G.AutoDrinkRunning
+		and Color3.fromRGB(35,120,55)
+		or Color3.fromRGB(40,40,40)
+end)
+
+AutoRestButton.MouseButton1Click:Connect(function()
+
+	_G.AutoRestRunning=not _G.AutoRestRunning
+
+	AutoRestButton.Text="AUTO REST : "
+		..(_G.AutoRestRunning and "ON" or "OFF")
+
+	AutoRestButton.BackgroundColor3=
+		_G.AutoRestRunning
+		and Color3.fromRGB(35,120,55)
+		or Color3.fromRGB(40,40,40)
+end)
+
+--//==================================================
+--// QUEST DETECTION
+--//==================================================
+
+task.spawn(function()
+
+	while task.wait(.2) do
+
+		pcall(function()
+
+			local playerGui=P:WaitForChild("PlayerGui")
+
+			local gameUI=playerGui:FindFirstChild("GameUI")
+
+			local questsFrame=gameUI
+				and gameUI:FindFirstChild("QuestsFrame")
+
+			local detectedQuest="None"
+
+			if questsFrame then
+
+				for _,child in pairs(questsFrame:GetChildren()) do
+
+					local textContent=""
+
+					for _,desc in pairs(child:GetDescendants()) do
+
+						if desc:IsA("TextLabel") then
+
+							textContent=textContent
+								.." "
+								..string.lower(desc.Text)
+						end
+					end
+
+					if string.find(textContent,"eat something") then
+
+						detectedQuest="Eat"
+						break
+
+					elseif string.find(textContent,"drink water") then
+
+						detectedQuest="Drink"
+						break
+
+					elseif string.find(textContent,"rest") then
+
+						detectedQuest="Rest"
+						break
+					end
+				end
+			end
+
+			_G.CurrentQuest=detectedQuest
+
+			if detectedQuest=="Eat" then
+
+				QuestLabel.Text="Current Quest: Eat"
+				QuestLabel.TextColor3=
+					Color3.fromRGB(50,255,50)
+
+			elseif detectedQuest=="Drink" then
+
+				QuestLabel.Text="Current Quest: Drink"
+				QuestLabel.TextColor3=
+					Color3.fromRGB(50,150,255)
+
+			elseif detectedQuest=="Rest" then
+
+				QuestLabel.Text="Current Quest: Rest"
+				QuestLabel.TextColor3=
+					Color3.fromRGB(255,165,0)
+
+			else
+
+				QuestLabel.Text="Current Quest: Waiting..."
+				QuestLabel.TextColor3=
+					Color3.fromRGB(255,255,0)
+			end
+		end)
+	end
+end)
+
+--//==================================================
+--// AUTO EAT
+--//==================================================
+
+task.spawn(function()
+
+	local remote=
+		RS.Remotes.Character.Eat
+
+	while true do
+
+		if _G.AutoEatRunning
+		and _G.CurrentQuest=="Eat" then
+
+			pcall(function()
+
+				local char=P.Character
+				local hrp=char
+					and char:FindFirstChild("HumanoidRootPart")
+
+				if hrp then
+
+					local env=workspace.MapEnvironment
+					local closest=nil
+					local shortest=math.huge
+
+					local folders={
+
+						{
+							F=env:FindFirstChild("RedWood")
+								and env.RedWood:FindFirstChild("Trees"),
+							N="RedWoodTree"
+						},
+
+						{
+							F=env:FindFirstChild("Pines")
+								and env.Pines:FindFirstChild("Trees"),
+							N="PineTree"
+						},
+
+						{
+							F=env:FindFirstChild("Desert")
+								and env.Desert:FindFirstChild("Tress"),
+							N="DesertTree"
+						},
+
+						{
+							F=env:FindFirstChild("Lobby")
+								and env.Lobby:FindFirstChild("Trees"),
+							N="RedWoodTree"
+						}
+					}
+
+					for _,conf in pairs(folders) do
+
+						if conf.F then
+
+							for _,tree in pairs(conf.F:GetChildren()) do
+
+								if tree.Name==conf.N then
+
+									local p=
+										tree:IsA("BasePart")
+										and tree
+										or tree:FindFirstChildWhichIsA("BasePart")
+
+									if p then
+
+										local distance=
+											(hrp.Position-p.Position).Magnitude
+
+										if distance<shortest then
+											shortest=distance
+											closest=tree
+										end
+									end
+								end
+							end
+						end
+					end
+
+					if closest then
+						remote:FireServer(closest)
+					end
+				end
+			end)
+
+			task.wait(.4)
+
+		else
+			task.wait(.2)
+		end
+	end
+end)
+
+--//==================================================
+--// AUTO DRINK
+--//==================================================
+
+task.spawn(function()
+
+	while true do
+
+		if _G.AutoDrinkRunning
+		and _G.CurrentQuest=="Drink" then
+
+			pcall(function()
+
+				RS.Remotes.Character.CharacterFunctions
+					:InvokeServer("Drink")
+			end)
+
+			task.wait(.8)
+
+		else
+			task.wait(.2)
+		end
+	end
+end)
+
+--//==================================================
+--// AUTO REST
+--//==================================================
+
+task.spawn(function()
+
+	local restRemote=
+		RS.Remotes.Character.Rest
+
+	local isRestingActive=false
+
+	while true do
+
+		task.wait(.3)
+
+		local shouldRest=
+			_G.AutoRestRunning
+			and _G.CurrentQuest=="Rest"
+
+		if shouldRest and not isRestingActive then
+
+			pcall(function()
+				restRemote:InvokeServer(true)
+			end)
+
+			isRestingActive=true
+
+		elseif not shouldRest and isRestingActive then
+
+			pcall(function()
+				restRemote:InvokeServer(false)
+			end)
+
+			isRestingActive=false
+		end
+	end
+end)
+
+--//==================================================
+--// TAB SWITCH
+--//==================================================
+
+FarmTab.MouseButton1Click:Connect(function()
+
+	FarmPage.Visible=true
+	QuestPage.Visible=false
+
+	FarmTab.BackgroundColor3=Color3.fromRGB(35,120,55)
+	QuestTab.BackgroundColor3=Color3.fromRGB(40,40,40)
+end)
+
+QuestTab.MouseButton1Click:Connect(function()
+
+	FarmPage.Visible=false
+	QuestPage.Visible=true
+
+	FarmTab.BackgroundColor3=Color3.fromRGB(40,40,40)
+	QuestTab.BackgroundColor3=Color3.fromRGB(35,120,55)
+end)
+
+--//==================================================
+--// MENU BUTTON
+--//==================================================
+
+local H=Instance.new("TextButton")
+H.Parent=G
+H.Size=UDim2.fromOffset(75,32)
+H.Position=UDim2.fromOffset(10,10)
+H.BackgroundColor3=Color3.fromRGB(25,25,25)
+H.Text="MENU"
+H.TextColor3=Color3.new(1,1,1)
+H.TextSize=13
+H.Font=Enum.Font.GothamBold
+
+Instance.new("UICorner",H).CornerRadius=UDim.new(0,7)
+
+H.MouseButton1Click:Connect(function()
+	F.Visible=not F.Visible
+end)
+
+--//==================================================
+--// DRAG
+--//==================================================
+
+local drag=false
+local start
+local pos
+
+T.InputBegan:Connect(function(input)
+
+	if input.UserInputType==Enum.UserInputType.MouseButton1
+	or input.UserInputType==Enum.UserInputType.Touch then
+
+		drag=true
+		start=input.Position
+		pos=F.Position
+	end
+end)
+
+UIS.InputChanged:Connect(function(input)
+
+	if drag and (
+		input.UserInputType==Enum.UserInputType.MouseMovement
+		or input.UserInputType==Enum.UserInputType.Touch
+	) then
+
+		local d=input.Position-start
+
+		F.Position=UDim2.new(
+			pos.X.Scale,
+			pos.X.Offset+d.X,
+			pos.Y.Scale,
+			pos.Y.Offset+d.Y
+		)
+	end
+end)
+
+UIS.InputEnded:Connect(function(input)
+
+	if input.UserInputType==Enum.UserInputType.MouseButton1
+	or input.UserInputType==Enum.UserInputType.Touch then
+
+		drag=false
+	end
+end)
